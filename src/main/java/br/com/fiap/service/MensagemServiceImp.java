@@ -16,7 +16,6 @@ public class MensagemServiceImp implements MensagemService{
 
     @Override
     public Mensagem registrarMensagem(Mensagem mensagem) {
-        mensagem.setId(UUID.randomUUID());
         return mensagemRepository.save(mensagem);
     }
 

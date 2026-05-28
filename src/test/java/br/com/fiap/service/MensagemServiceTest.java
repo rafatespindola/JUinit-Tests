@@ -1,5 +1,6 @@
 package br.com.fiap.service;
 
+import br.com.fiap.exception.MensagemNotFoundException;
 import br.com.fiap.helper.MensagemHelper;
 import br.com.fiap.model.Mensagem;
 import br.com.fiap.repository.MensagemRepository;
@@ -49,14 +50,23 @@ public class MensagemServiceTest {
 
         // Assert
         verify(mensagemRepository, times(1)).save(mensagem);
-        assertThat(mensagemRegistrada)
-                .isNotNull();
-        assertThat(mensagemRegistrada.getId())
-                .isNotNull();
         assertThat(mensagemRegistrada.getUsuario())
                 .isEqualTo("Natalia");
         assertThat(mensagemRegistrada.getConteudo())
                 .isEqualTo("Adora passear");
+    }
+
+    @Test
+    void naoDevePermitirRegistrarMensagemQuandoRepositorioFalhar() {
+        // Arrange
+        var mensagem = MensagemHelper.gerarMensagem("Natalia", "Adora passear");
+        when(mensagemRepository.save(any(Mensagem.class)))
+                .thenThrow(new RuntimeException("Erro ao salvar"));
+
+        // Act + Assert
+        assertThatThrownBy(() -> mensagemService.registrarMensagem(mensagem))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Erro ao salvar");
     }
 
     @Test
@@ -79,6 +89,20 @@ public class MensagemServiceTest {
     }
 
     @Test
+    void naoDevePermitirObterMensagemPorIdQuandoIdNaoExistir(){
+        // Arrange
+        var id = UUID.randomUUID();
+        when(mensagemRepository.findById(any(UUID.class)))
+                .thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> mensagemService.obterMensagem(id))
+                .isInstanceOf(MensagemNotFoundException.class)
+                .hasMessage("Mensagem não encontrada");
+        verify(mensagemRepository, times(1)).findById(id);
+    }
+
+    @Test
     void devePermitirObterMensagens() {
         // Arrange
         var mensagens = MensagemHelper.gerarListaMensagens();
@@ -93,6 +117,18 @@ public class MensagemServiceTest {
                 .isNotNull()
                 .hasSize(mensagens.size())
                 .containsExactlyInAnyOrderElementsOf(mensagens);
+    }
+
+    @Test
+    void naoDevePermitirObterListaDeMensagensQuandoRepositorioFalhar() {
+        // Arrange
+        when(mensagemRepository.findAll())
+                .thenThrow(new RuntimeException("Erro ao obter lista de mensagem"));
+
+        // Act + Assert
+        assertThatThrownBy(() -> mensagemService.obterMensages())
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Erro ao obter lista de mensagem");
     }
 
     @Test
@@ -120,6 +156,21 @@ public class MensagemServiceTest {
     }
 
     @Test
+    void naoDevePermitirAlterarMensagemQuandoIdNaoExistir() {
+        // Arrange
+        UUID id = UUID.randomUUID();
+        Mensagem mensagemNova = MensagemHelper.gerarMensagem();
+        when(mensagemRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> mensagemService.alterarMensagem(mensagemNova, id))
+                .isInstanceOf(MensagemNotFoundException.class)
+                .hasMessage("Mensagem não encontrada");
+        verify(mensagemRepository, never()).save(any(Mensagem.class));
+        verify(mensagemRepository, times(1)).findById(id);
+    }
+
+    @Test
     void devePermitirDeletarMensagem() {
         // Arrange
         var id = UUID.randomUUID();
@@ -135,5 +186,21 @@ public class MensagemServiceTest {
         // Assert
         verify(mensagemRepository, times(1)).findById(id);
         verify(mensagemRepository, times(1)).deleteById(id);
+    }
+
+    @Test
+    void naoDevePermitirDeletarMensagemQuandoIdNaoExistir() {
+        // Arrange
+        UUID id = UUID.randomUUID();
+        when(mensagemRepository.findById(any(UUID.class)))
+                .thenReturn(Optional.empty());
+
+
+        // Act + Assert
+        assertThatThrownBy(() -> mensagemService.deletarMensagem(id))
+                .isInstanceOf(MensagemNotFoundException.class)
+                .hasMessage("Mensagem não encontrada");
+        verify(mensagemRepository, never()).deleteById(any(UUID.class));
+        verify(mensagemRepository, times(1)).findById(id);
     }
 }
