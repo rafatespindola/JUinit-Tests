@@ -12,22 +12,22 @@ spring:
     username: sa
     password:
     driverClassName: org.h2.Driver
-    jpa:
-      database: h2
-      database-platform: org.hibernate.dialect.H2Dialect
-      defer-datasource-initialization: true
-      hibernate:
-        ddl-auto: create-drop
-    sql:
-      init:
-        mode:always
-    lifecycle:
-      timeout-par-shutdown-phase: "5s"
+  jpa:
+    database: h2
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create-drop
+  sql:
+    init:
+      mode: always
+  lifecycle:
+    timeout-per-shutdown-phase: "5s"
 management:
   endpoint:
     web:
       exposure:
-        include: healt,info,shutdown
+        include: health,info,shutdown
   endpoints:
     shutdown:
       enabled: true
